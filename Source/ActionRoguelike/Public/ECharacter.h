@@ -8,6 +8,7 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+//class AActor;
 
 
 UCLASS()
@@ -26,6 +27,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* CameraComp;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ProjectileClass;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -34,6 +38,9 @@ protected:
 
 	UFUNCTION()
 	void MoveRight(float Value);
+
+	UFUNCTION()
+	void PrimaryAttack();
 
 public:	
 	// Called every frame

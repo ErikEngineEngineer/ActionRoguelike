@@ -5,6 +5,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "DrawDebugHelpers.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AECharacter::AECharacter()
@@ -19,6 +20,9 @@ AECharacter::AECharacter()
 	CameraComp = CreateDefaultSubobject<UCameraComponent>("Camera");
 	CameraComp->SetupAttachment(SpringArmComp);
 
+	bUseControllerRotationYaw = false;
+	//GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
 
 // Called when the game starts or when spawned
@@ -30,12 +34,33 @@ void AECharacter::BeginPlay()
 
 void AECharacter::MoveForward(float Value)
 {
-	AddMovementInput(GetActorForwardVector(), Value, false);
+	FRotator ControlRotation = GetControlRotation();
+	ControlRotation.Pitch = 0.0f;
+	ControlRotation.Roll = 0.0f;
+	AddMovementInput(ControlRotation.Vector(), Value, false);
 }
 
 void AECharacter::MoveRight(float Value)
 {
-	AddMovementInput(GetActorRightVector(), Value, false);
+	FRotator ControlRotation = GetControlRotation();
+	ControlRotation.Pitch = 0.0f;
+	ControlRotation.Roll = 0.0f;
+	FVector ControlRight = FRotationMatrix(ControlRotation).GetScaledAxis(EAxis::Y); //X Forward, Y Right, Z Up Unreal uses lefthanded system
+	
+
+	AddMovementInput(ControlRight,Value, false);
+}
+
+void AECharacter::PrimaryAttack()
+{
+	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+	FTransform SpawnTransform = FTransform(GetControlRotation(), HandLocation);
+	
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTransform, SpawnParams);
 }
 
 // Called every frame
@@ -67,5 +92,8 @@ void AECharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+
+	PlayerInputComponent->BindAction("PrimaryAttack", EInputEvent::IE_Pressed, this, &AECharacter::PrimaryAttack);
+	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 }
 
